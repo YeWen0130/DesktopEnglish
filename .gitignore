@@ -1,0 +1,15 @@
+# Generated databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Office temporary files
+~$*
+*.tmp
+
+# Windows / editor files
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
