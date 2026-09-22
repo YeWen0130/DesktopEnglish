@@ -64,11 +64,18 @@ public sealed partial class StudyViewModel(
 
     public Task InitializeAsync(CancellationToken cancellationToken) => LoadBatchAsync(manual: false, cancellationToken);
 
+    /// <summary>Bound to the study page's "再来一组" button: an explicit request, so the daily limit does not apply.</summary>
+    [RelayCommand]
+    public Task LoadBatchManuallyAsync(CancellationToken cancellationToken) => LoadBatchAsync(manual: true, cancellationToken);
+
+    /// <summary>Loads the next scheduled batch, respecting the daily limit.</summary>
+    [RelayCommand]
+    public Task LoadBatchAsync(CancellationToken cancellationToken) => LoadBatchAsync(manual: false, cancellationToken);
+
     /// <summary>
     /// Loads a fresh batch. Manual sessions ignore the daily limit because the user asked for them explicitly.
     /// </summary>
-    [RelayCommand]
-    public async Task LoadBatchAsync(bool manual = false, CancellationToken cancellationToken = default)
+    private async Task LoadBatchAsync(bool manual, CancellationToken cancellationToken)
     {
         IsBusy = true;
 

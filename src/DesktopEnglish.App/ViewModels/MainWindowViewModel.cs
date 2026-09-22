@@ -67,7 +67,7 @@ public sealed partial class MainWindowViewModel(IServiceProvider services) : Obs
 
         if (CurrentPage is StudyViewModel study)
         {
-            _ = study.LoadBatchAsync(manual: true);
+            _ = study.LoadBatchManuallyAsync(CancellationToken.None);
         }
     }
 }
