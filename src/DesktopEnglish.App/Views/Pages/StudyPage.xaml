@@ -1,0 +1,82 @@
+<UserControl x:Class="DesktopEnglish.Views.StudyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header: progress and round counters -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+            <TextBlock Style="{StaticResource PageTitle}" Text="学习" Margin="0,0,16,0" />
+            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="12" Padding="10,4"
+                    VerticalAlignment="Center" Margin="0,0,12,0">
+                <TextBlock Text="{Binding ProgressText}" FontWeight="SemiBold"
+                           Foreground="{StaticResource AccentBrush}" />
+            </Border>
+            <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center">
+                <Run Text="认识 " /><Run Text="{Binding CorrectCount, Mode=OneWay}" Foreground="{StaticResource SuccessBrush}" />
+                <Run Text="    不认识 " /><Run Text="{Binding WrongCount, Mode=OneWay}" Foreground="{StaticResource DangerBrush}" />
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Word card -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="{Binding WordText}" FontSize="42" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,12,0,6" TextWrapping="Wrap" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,18">
+                    <TextBlock Text="{Binding Phonetic}" FontSize="18" Margin="0,0,12,0"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="4" Padding="8,2"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PartOfSpeech}" FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Border>
+                </StackPanel>
+
+                <Separator Margin="0,0,0,16" />
+
+                <!-- Answer stays hidden until revealed, so the user actually recalls it first. -->
+                <StackPanel Visibility="{Binding IsAnswerRevealed, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="中文释义" />
+                    <TextBlock Text="{Binding Meaning}" FontSize="17" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="例句" />
+                    <TextBlock Text="{Binding Example}" FontSize="15" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
+                </StackPanel>
+
+                <Button Content="显示释义" Command="{Binding RevealCommand}" HorizontalAlignment="Center"
+                        Margin="0,8,0,0"
+                        Visibility="{Binding IsAnswerRevealed, Converter={StaticResource InverseBoolToVisibility}}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Answer controls -->
+        <StackPanel Grid.Row="2" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                        Visibility="{Binding IsFinished, Converter={StaticResource InverseBoolToVisibility}}">
+                <Button Style="{StaticResource AnswerButton}" Content="认识"
+                        Foreground="{StaticResource SuccessBrush}"
+                        Command="{Binding KnownCommand}" />
+                <Button Style="{StaticResource AnswerButton}" Content="模糊"
+                        Foreground="{StaticResource WarningBrush}"
+                        Command="{Binding FuzzyCommand}" />
+                <Button Style="{StaticResource AnswerButton}" Content="不认识"
+                        Foreground="{StaticResource DangerBrush}"
+                        Command="{Binding UnknownCommand}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                <Button Style="{StaticResource PrimaryButton}" Content="再来一组"
+                        Command="{Binding LoadBatchCommand}" CommandParameter="True" />
+                <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center"
+                           Text="{Binding StatusMessage}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

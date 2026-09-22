@@ -1,0 +1,83 @@
+<UserControl x:Class="DesktopEnglish.Views.DashboardPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <TextBlock Style="{StaticResource PageTitle}" Text="学习概览" />
+            <TextBlock Style="{StaticResource Caption}" Text="所有统计均实时从本地数据库计算。" Margin="0,0,0,16" />
+
+            <UniformGrid Columns="4" Margin="0,0,0,16">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="今日学习" />
+                        <TextBlock Text="{Binding TodayStudied}" FontSize="30" FontWeight="Bold"
+                                   Foreground="{StaticResource AccentBrush}" />
+                        <TextBlock Style="{StaticResource Caption}" Text="个单词" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="今日正确" />
+                        <TextBlock Text="{Binding TodayKnown}" FontSize="30" FontWeight="Bold"
+                                   Foreground="{StaticResource SuccessBrush}" />
+                        <TextBlock Style="{StaticResource Caption}">
+                            <Run Text="模糊" /><Run Text="{Binding TodayFuzzy, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="今日错误" />
+                        <TextBlock Text="{Binding TodayUnknown}" FontSize="30" FontWeight="Bold"
+                                   Foreground="{StaticResource DangerBrush}" />
+                        <TextBlock Style="{StaticResource Caption}" Text="个单词" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="连续学习" />
+                        <TextBlock Text="{Binding StreakDays}" FontSize="30" FontWeight="Bold"
+                                   Foreground="{StaticResource WarningBrush}" />
+                        <TextBlock Style="{StaticResource Caption}" Text="天" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <UniformGrid Columns="4" Margin="0,0,0,16">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="累计学习次数" />
+                        <TextBlock Text="{Binding TotalRecords}" FontSize="24" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="已掌握单词" />
+                        <TextBlock Text="{Binding MasteredWords}" FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource SuccessBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="待复习单词" />
+                        <TextBlock Text="{Binding DueWords}" FontSize="24" FontWeight="SemiBold"
+                                   Foreground="{StaticResource WarningBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="词库总量" />
+                        <TextBlock Text="{Binding TotalWords}" FontSize="24" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource PrimaryButton}" Content="刷新统计"
+                        Command="{Binding RefreshCommand}" />
+                <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center"
+                           Text="{Binding StatusMessage}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

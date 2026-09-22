@@ -1,0 +1,28 @@
+<Application x:Class="DesktopEnglish.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:DesktopEnglish.ViewModels"
+             xmlns:views="clr-namespace:DesktopEnglish.Views"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Page view models are rendered by their matching view. -->
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <views:DashboardPage />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:WordsViewModel}">
+                <views:WordsPage />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:StudyViewModel}">
+                <views:StudyPage />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsPage />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
