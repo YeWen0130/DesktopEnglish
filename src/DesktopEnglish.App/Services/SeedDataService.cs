@@ -20,16 +20,26 @@ public sealed class SeedDataService(
 
     public async Task SeedIfEmptyAsync(CancellationToken cancellationToken)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        if (await context.Words.AnyAsync(cancellationToken))
+        await using (var context = await contextFactory.CreateDbContextAsync(cancellationToken))
         {
-            logger.LogDebug("Word table already populated; skipping seed.");
-            return;
+            if (await context.Words.AnyAsync(cancellationToken))
+            {
+                logger.LogDebug("Word table already populated; skipping seed.");
+                return;
+            }
         }
 
         logger.LogInformation("Word table is empty; seeding from embedded word list.");
+        await EnsureWordListCompleteAsync(cancellationToken);
+    }
 
+    /// <summary>
+    /// Imports the embedded word list with duplicate-skipping, whether or not the table already holds rows.
+    /// A database recovery uses this to bring back words that lived on the lost pages, while the words the
+    /// user has already studied keep their review state.
+    /// </summary>
+    public async Task EnsureWordListCompleteAsync(CancellationToken cancellationToken)
+    {
         await using var stream = OpenSeedStream();
         if (stream is null)
         {
@@ -47,8 +57,8 @@ public sealed class SeedDataService(
         var result = await importService.ImportAsync(stream, importOptions, cancellationToken);
 
         logger.LogInformation(
-            "Seed complete: added={Added} skipped={Skipped} invalid={Invalid}",
-            result.Added, result.Skipped, result.Invalid);
+            "Word list import complete: added={Added} updated={Updated} skipped={Skipped} invalid={Invalid}",
+            result.Added, result.Updated, result.Skipped, result.Invalid);
     }
 
     private static Stream? OpenSeedStream() =>

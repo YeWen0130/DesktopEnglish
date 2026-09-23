@@ -58,12 +58,19 @@ public partial class App : Application, IShellController
 
             _host = BuildHost(configuration, logger);
 
+            // The database is verified - and repaired if it was damaged - before the reminder loop can read
+            // from it. Doing this before the host starts keeps background services away from the file while
+            // its journal mode is being pinned.
+            var databaseReport = await _host.Services
+                .GetRequiredService<DatabaseMaintenanceService>()
+                .EnsureHealthyAsync(_shutdownCts.Token);
+
             // Start on a background thread: a BackgroundService started from the UI thread would post its
             // continuations back onto the WPF dispatcher, which would let the reminder loop block the UI.
             await Task.Run(() => _host.StartAsync(_shutdownCts.Token));
 
             // Data must be ready before the reminder loop produces its first tick.
-            await InitializeDataAsync(_shutdownCts.Token);
+            await InitializeDataAsync(databaseReport, _shutdownCts.Token);
             await InitializeSettingsAsync(_shutdownCts.Token);
 
             _tray = TrayHost.Create(
@@ -111,7 +118,7 @@ public partial class App : Application, IShellController
     /// Migrates the schema and seeds the dictionary before the scheduler starts, so the first reminder tick
     /// already has words to choose from.
     /// </summary>
-    private async Task InitializeDataAsync(CancellationToken cancellationToken)
+    private async Task InitializeDataAsync(DatabaseMaintenanceReport report, CancellationToken cancellationToken)
     {
         var factory = _host!.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
 
@@ -120,7 +127,18 @@ public partial class App : Application, IShellController
             await context.Database.MigrateAsync(cancellationToken);
         }
 
-        await _host.Services.GetRequiredService<SeedDataService>().SeedIfEmptyAsync(cancellationToken);
+        var seed = _host.Services.GetRequiredService<SeedDataService>();
+
+        // After a recovery the dictionary can be missing whatever lived on the lost pages, so the embedded
+        // word list is re-imported. Existing words and their review state are left untouched.
+        if (report.WasRecovered)
+        {
+            await seed.EnsureWordListCompleteAsync(cancellationToken);
+        }
+        else
+        {
+            await seed.SeedIfEmptyAsync(cancellationToken);
+        }
     }
 
     private Task InitializeSettingsAsync(CancellationToken cancellationToken) =>

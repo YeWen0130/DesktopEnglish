@@ -37,8 +37,14 @@ public static class ServiceRegistration
         });
 
         // Data access: a factory keeps contexts short-lived and safe across UI and background threads.
+        // The connection string and the interceptor come from SqliteConfiguration so every context commits
+        // durably; see that type for why the application no longer runs on SQLite defaults.
         services.AddDbContextFactory<AppDbContext>(options =>
-            options.UseSqlite($"Data Source={AppPaths.DatabasePath}"));
+            options
+                .UseSqlite(SqliteConfiguration.BuildConnectionString(AppPaths.DatabasePath))
+                .AddInterceptors(new SqliteDurabilityInterceptor()));
+
+        services.AddSingleton<DatabaseMaintenanceService>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IDispatcherService>(sp =>

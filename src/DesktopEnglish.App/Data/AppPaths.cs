@@ -15,6 +15,9 @@ public static class AppPaths
 
     public static string LogDirectory => Path.Combine(DataDirectory, "logs");
 
+    /// <summary>Where copies of a database that failed its integrity check are preserved.</summary>
+    public static string BackupDirectory => Path.Combine(DataDirectory, "backup");
+
     /// <summary>Optional user override of the application configuration.</summary>
     public static string UserSettingsJsonPath => Path.Combine(DataDirectory, "appsettings.json");
 
@@ -22,6 +25,7 @@ public static class AppPaths
     {
         Directory.CreateDirectory(DataDirectory);
         Directory.CreateDirectory(LogDirectory);
+        Directory.CreateDirectory(BackupDirectory);
     }
 
     private static string ResolveDataDirectory()
