@@ -22,6 +22,10 @@ public sealed class AppOptions
 
     public bool AutoStart { get; set; }
 
+    public ReviewAlgorithm ReviewAlgorithm { get; set; } = ReviewAlgorithm.Classic;
+
+    public double FsrsDesiredRetention { get; set; } = 0.9;
+
     public string Category { get; set; } = "百词斩";
 
     public int ImportBatchSize { get; set; } = 500;
@@ -34,7 +38,9 @@ public sealed class AppOptions
         AutoStart: AutoStart,
         NotificationEnabled: NotificationEnabled,
         SoundEnabled: SoundEnabled,
-        WordsPerReminder: WordsPerReminder);
+        WordsPerReminder: WordsPerReminder,
+        ReviewAlgorithm: ReviewAlgorithm,
+        FsrsDesiredRetention: FsrsDesiredRetention);
 
     public UserSettings ToSettingsEntity() => new()
     {
@@ -45,6 +51,8 @@ public sealed class AppOptions
         NotificationEnabled = NotificationEnabled,
         SoundEnabled = SoundEnabled,
         WordsPerReminder = WordsPerReminder,
+        ReviewAlgorithm = ReviewAlgorithm,
+        FsrsDesiredRetention = FsrsDesiredRetention,
     };
 }
 

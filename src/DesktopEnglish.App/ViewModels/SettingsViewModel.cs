@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DesktopEnglish.Domain;
 using DesktopEnglish.Services;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,15 @@ public sealed partial class SettingsViewModel(
     IStartupService startup,
     ILogger<SettingsViewModel> logger) : ObservableObject, IAsyncInitializable
 {
+    public sealed record ReviewAlgorithmOption(ReviewAlgorithm Value, string Name, string Description);
+
+    public IReadOnlyList<ReviewAlgorithmOption> ReviewAlgorithms { get; } =
+    [
+        new(ReviewAlgorithm.Classic, "经典固定间隔", "按 1、2、4、7、15、30、60 天复习"),
+        new(ReviewAlgorithm.Sm2, "SM-2", "根据回答动态调整难度与间隔"),
+        new(ReviewAlgorithm.Fsrs, "FSRS", "根据记忆稳定性预测下一次复习"),
+    ];
+
     /// <summary>Guards against re-entrant saves while the initial values are being applied.</summary>
     private bool _isLoading;
 
@@ -40,6 +50,15 @@ public sealed partial class SettingsViewModel(
     private bool _isPaused;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFsrsSelected))]
+    private ReviewAlgorithmOption? _selectedReviewAlgorithm;
+
+    [ObservableProperty]
+    private double _fsrsDesiredRetentionPercent = 90;
+
+    public bool IsFsrsSelected => SelectedReviewAlgorithm?.Value == ReviewAlgorithm.Fsrs;
+
+    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     public Task InitializeAsync(CancellationToken cancellationToken)
@@ -60,6 +79,8 @@ public sealed partial class SettingsViewModel(
         SoundEnabled = current.SoundEnabled;
         AutoStart = startup.IsEnabled();
         IsPaused = reminderState.IsPaused;
+        SelectedReviewAlgorithm = ReviewAlgorithms.First(option => option.Value == current.ReviewAlgorithm);
+        FsrsDesiredRetentionPercent = current.FsrsDesiredRetention * 100;
 
         _isLoading = false;
     }
@@ -77,6 +98,10 @@ public sealed partial class SettingsViewModel(
             var interval = Math.Clamp(ReminderInterval, 1, 24 * 60);
             var daily = Math.Clamp(DailyWordCount, 1, 1000);
             var perRound = Math.Clamp(WordsPerReminder, 1, 50);
+            var algorithm = SelectedReviewAlgorithm?.Value ?? ReviewAlgorithm.Classic;
+            var retentionPercent = double.IsFinite(FsrsDesiredRetentionPercent)
+                ? Math.Clamp(FsrsDesiredRetentionPercent, 80, 97)
+                : 90;
 
             await settings.UpdateAsync(entity =>
             {
@@ -86,6 +111,8 @@ public sealed partial class SettingsViewModel(
                 entity.NotificationEnabled = NotificationEnabled;
                 entity.SoundEnabled = SoundEnabled;
                 entity.AutoStart = AutoStart;
+                entity.ReviewAlgorithm = algorithm;
+                entity.FsrsDesiredRetention = retentionPercent / 100;
                 return entity;
             }, cancellationToken);
 
@@ -94,10 +121,12 @@ public sealed partial class SettingsViewModel(
             ReminderInterval = interval;
             DailyWordCount = daily;
             WordsPerReminder = perRound;
+            FsrsDesiredRetentionPercent = retentionPercent;
 
             StatusMessage = $"已保存（{DateTime.Now:HH:mm:ss}）";
-            logger.LogInformation("Settings saved: interval={Interval} daily={Daily} perRound={PerRound}",
-                interval, daily, perRound);
+            logger.LogInformation(
+                "Settings saved: interval={Interval} daily={Daily} perRound={PerRound} algorithm={Algorithm} retention={Retention}",
+                interval, daily, perRound, algorithm, retentionPercent / 100);
         }
         catch (OperationCanceledException)
         {

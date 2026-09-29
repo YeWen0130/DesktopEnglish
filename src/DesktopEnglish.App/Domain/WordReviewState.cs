@@ -25,4 +25,18 @@ public class WordReviewState
 
     /// <summary>When the word was last answered (UTC).</summary>
     public DateTime LastReviewedAt { get; set; }
+
+    public ReviewAlgorithm Algorithm { get; set; } = ReviewAlgorithm.Classic;
+
+    public int AlgorithmVersion { get; set; } = 1;
+
+    public int Sm2Repetitions { get; set; }
+
+    public double Sm2EaseFactor { get; set; } = 2.5;
+
+    public double Sm2IntervalDays { get; set; }
+
+    public double FsrsStability { get; set; }
+
+    public double FsrsDifficulty { get; set; }
 }

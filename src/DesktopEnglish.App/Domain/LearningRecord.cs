@@ -27,4 +27,6 @@ public class LearningRecord
 
     /// <summary>Review time (UTC) computed for the word after this result was applied.</summary>
     public DateTime NextReviewTime { get; set; }
+
+    public ReviewAlgorithm Algorithm { get; set; } = ReviewAlgorithm.Classic;
 }

@@ -23,6 +23,9 @@ namespace DesktopEnglish.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Algorithm")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("CorrectCount")
                         .HasColumnType("INTEGER");
 
@@ -65,10 +68,18 @@ namespace DesktopEnglish.Data.Migrations
                     b.Property<int>("DailyWordCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<double>("FsrsDesiredRetention")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.90000000000000002);
+
                     b.Property<bool>("NotificationEnabled")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ReminderInterval")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReviewAlgorithm")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("SoundEnabled")
@@ -144,8 +155,22 @@ namespace DesktopEnglish.Data.Migrations
                     b.Property<int>("WordId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Algorithm")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AlgorithmVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("CorrectCount")
                         .HasColumnType("INTEGER");
+
+                    b.Property<double>("FsrsDifficulty")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("FsrsStability")
+                        .HasColumnType("REAL");
 
                     b.Property<DateTime>("LastReviewedAt")
                         .HasColumnType("TEXT");
@@ -155,6 +180,17 @@ namespace DesktopEnglish.Data.Migrations
 
                     b.Property<DateTime>("NextReviewTime")
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Sm2EaseFactor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(2.5);
+
+                    b.Property<double>("Sm2IntervalDays")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Sm2Repetitions")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Stage")
                         .HasColumnType("INTEGER");

@@ -4,10 +4,11 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <TextBlock Style="{StaticResource PageTitle}" Text="学习概览" />
-            <TextBlock Style="{StaticResource Caption}" Text="所有统计均实时从本地数据库计算。" Margin="0,0,0,16" />
+            <TextBlock Style="{StaticResource Caption}" Text="所有统计均实时从本地数据库计算。点击卡片查看详情。" Margin="0,0,0,16" />
 
             <UniformGrid Columns="4" Margin="0,0,0,16">
-                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0" Cursor="Hand"
+                        MouseLeftButtonUp="OnStudiedClick">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="今日学习" />
                         <TextBlock Text="{Binding TodayStudied}" FontSize="30" FontWeight="Bold"
@@ -15,7 +16,8 @@
                         <TextBlock Style="{StaticResource Caption}" Text="个单词" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0" Cursor="Hand"
+                        MouseLeftButtonUp="OnCorrectClick">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="今日正确" />
                         <TextBlock Text="{Binding TodayKnown}" FontSize="30" FontWeight="Bold"
@@ -25,7 +27,8 @@
                         </TextBlock>
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,0" Cursor="Hand"
+                        MouseLeftButtonUp="OnUnknownClick">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="今日错误" />
                         <TextBlock Text="{Binding TodayUnknown}" FontSize="30" FontWeight="Bold"
@@ -33,7 +36,8 @@
                         <TextBlock Style="{StaticResource Caption}" Text="个单词" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource Card}">
+                <Border Style="{StaticResource Card}" Cursor="Hand"
+                        MouseLeftButtonUp="OnCalendarClick">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="连续学习" />
                         <TextBlock Text="{Binding StreakDays}" FontSize="30" FontWeight="Bold"
@@ -71,6 +75,127 @@
                     </StackPanel>
                 </Border>
             </UniformGrid>
+
+            <!-- Inline detail panel, expanded by clicking one of the four cards above. -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                    Visibility="{Binding IsDetailVisible, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding DetailTitle}"
+                                   Margin="0" VerticalAlignment="Center" />
+                        <Button Content="关闭" HorizontalAlignment="Right" Command="{Binding CloseDetailCommand}" />
+                    </Grid>
+
+                    <!-- Today's studied words (read-only, one row per word). -->
+                    <DataGrid ItemsSource="{Binding StudiedItems}" MaxHeight="360"
+                              Visibility="{Binding IsStudiedDetail, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="单词" Binding="{Binding WordText}" Width="140" />
+                            <DataGridTextColumn Header="音标" Binding="{Binding Phonetic}" Width="150" />
+                            <DataGridTextColumn Header="中文释义" Binding="{Binding Meaning}" Width="*" />
+                            <DataGridTextColumn Header="今日结果" Binding="{Binding Summary}" Width="200" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Today's correct records; each can be flipped to incorrect. -->
+                    <DataGrid ItemsSource="{Binding CorrectItems}" MaxHeight="360"
+                              Visibility="{Binding IsCorrectDetail, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="单词" Binding="{Binding WordText}" Width="140" />
+                            <DataGridTextColumn Header="音标" Binding="{Binding Phonetic}" Width="150" />
+                            <DataGridTextColumn Header="中文释义" Binding="{Binding Meaning}" Width="*" />
+                            <DataGridTextColumn Header="时间" Binding="{Binding ReviewedAtLocal, StringFormat=HH:mm}" Width="70" />
+                            <DataGridTemplateColumn Header="调整" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="改为不认识" Padding="8,3"
+                                                Command="{Binding DataContext.MarkUnknownCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Today's incorrect records; each can be flipped to correct. -->
+                    <DataGrid ItemsSource="{Binding UnknownItems}" MaxHeight="360"
+                              Visibility="{Binding IsUnknownDetail, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="单词" Binding="{Binding WordText}" Width="140" />
+                            <DataGridTextColumn Header="音标" Binding="{Binding Phonetic}" Width="150" />
+                            <DataGridTextColumn Header="中文释义" Binding="{Binding Meaning}" Width="*" />
+                            <DataGridTextColumn Header="时间" Binding="{Binding ReviewedAtLocal, StringFormat=HH:mm}" Width="70" />
+                            <DataGridTemplateColumn Header="调整" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="改为认识" Padding="8,3"
+                                                Command="{Binding DataContext.MarkKnownCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Streak calendar: daily word count and correct/wrong split. -->
+                    <StackPanel Visibility="{Binding IsCalendarDetail, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button Content="上月" Command="{Binding PreviousMonthCommand}" />
+                            <Button Content="下月" Command="{Binding NextMonthCommand}" />
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding CalendarTitle}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding Weekdays}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="7" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Style="{StaticResource Caption}" Text="{Binding}"
+                                               HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <ItemsControl ItemsSource="{Binding CalendarCells}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="7" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="2" Padding="6" MinHeight="52" CornerRadius="6"
+                                            BorderThickness="1">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+                                                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasActivity}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding DayText}" FontWeight="SemiBold" />
+                                            <TextBlock Style="{StaticResource Caption}" Text="{Binding Summary}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource PrimaryButton}" Content="刷新统计"

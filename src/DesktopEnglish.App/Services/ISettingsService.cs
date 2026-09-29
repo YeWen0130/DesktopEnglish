@@ -12,7 +12,9 @@ public sealed record UserSettingsSnapshot(
     bool AutoStart,
     bool NotificationEnabled,
     bool SoundEnabled,
-    int WordsPerReminder)
+    int WordsPerReminder,
+    ReviewAlgorithm ReviewAlgorithm,
+    double FsrsDesiredRetention)
 {
     public TimeSpan Interval => TimeSpan.FromMinutes(Math.Max(1, ReminderInterval));
 
@@ -22,7 +24,9 @@ public sealed record UserSettingsSnapshot(
         AutoStart: entity.AutoStart,
         NotificationEnabled: entity.NotificationEnabled,
         SoundEnabled: entity.SoundEnabled,
-        WordsPerReminder: entity.WordsPerReminder);
+        WordsPerReminder: entity.WordsPerReminder,
+        ReviewAlgorithm: entity.ReviewAlgorithm,
+        FsrsDesiredRetention: entity.FsrsDesiredRetention);
 }
 
 /// <summary>

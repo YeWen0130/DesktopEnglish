@@ -1,5 +1,12 @@
 namespace DesktopEnglish.Domain;
 
+public enum ReviewAlgorithm
+{
+    Classic = 0,
+    Sm2 = 1,
+    Fsrs = 2,
+}
+
 /// <summary>
 /// Persisted user settings. Stored as a single row with <see cref="Id"/> = <see cref="SingletonId"/>.
 /// </summary>
@@ -26,4 +33,8 @@ public class UserSettings
 
     /// <summary>How many words a single reminder attempts to surface.</summary>
     public int WordsPerReminder { get; set; } = 1;
+
+    public ReviewAlgorithm ReviewAlgorithm { get; set; } = ReviewAlgorithm.Classic;
+
+    public double FsrsDesiredRetention { get; set; } = 0.9;
 }

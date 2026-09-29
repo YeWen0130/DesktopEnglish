@@ -50,7 +50,8 @@ public static class ServiceRegistration
         services.AddSingleton<IDispatcherService>(sp =>
             new DispatcherService(sp.GetRequiredService<System.Windows.Application>().Dispatcher));
         services.AddSingleton<IReminderStateService, ReminderStateService>();
-        services.AddSingleton<IReviewScheduler, ReviewScheduler>();
+        services.AddSingleton<ConfiguredReviewScheduler>();
+        services.AddSingleton<IReviewScheduler>(sp => sp.GetRequiredService<ConfiguredReviewScheduler>());
         services.AddSingleton<IStartupService, StartupService>();
         services.AddSingleton<SingleInstanceGuard>();
 
@@ -59,6 +60,7 @@ public static class ServiceRegistration
         services.AddSingleton<IWordImportService, WordImportService>();
         services.AddSingleton<IExampleProvider, NullExampleProvider>();
         services.AddSingleton<IStatisticsService, StatisticsService>();
+        services.AddSingleton<ILearningRecordService, LearningRecordService>();
         services.AddSingleton<IWordSelectionService, WordSelectionService>();
         services.AddSingleton<IStudySessionService, StudySessionService>();
         services.AddSingleton<IStudyBatchService, StudyBatchService>();

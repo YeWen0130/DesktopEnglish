@@ -35,17 +35,47 @@ public sealed class StudySessionService(
         var state = await context.WordReviewStates
             .FirstOrDefaultAsync(s => s.WordId == wordId, cancellationToken);
 
-        var current = state is null
-            ? scheduler.CreateInitial(nowUtc)
-            : new ReviewOutcome(
+        ReviewOutcome current;
+        if (state is null || state.Algorithm != scheduler.CurrentAlgorithm)
+        {
+            var history = await context.LearningRecords
+                .AsNoTracking()
+                .Where(r => r.WordId == wordId)
+                .OrderBy(r => r.ReviewTime)
+                .ThenBy(r => r.Id)
+                .ToListAsync(cancellationToken);
+
+            current = scheduler.CreateInitial(
+                history.Count == 0 ? nowUtc : history[0].ReviewTime,
+                scheduler.CurrentAlgorithm,
+                scheduler.DesiredRetention);
+
+            foreach (var record in history)
+            {
+                current = scheduler.Apply(current, record.Result, record.ReviewTime,
+                    scheduler.CurrentAlgorithm, scheduler.DesiredRetention);
+            }
+        }
+        else
+        {
+            current = new ReviewOutcome(
                 Stage: state.Stage,
                 CorrectCount: state.CorrectCount,
                 WrongCount: state.WrongCount,
                 MasteryLevel: state.MasteryLevel,
                 NextReviewTime: state.NextReviewTime,
-                ReviewedAt: state.LastReviewedAt);
+                ReviewedAt: state.LastReviewedAt,
+                Algorithm: state.Algorithm,
+                AlgorithmVersion: state.AlgorithmVersion,
+                Sm2Repetitions: state.Sm2Repetitions,
+                Sm2EaseFactor: state.Sm2EaseFactor,
+                Sm2IntervalDays: state.Sm2IntervalDays,
+                FsrsStability: state.FsrsStability,
+                FsrsDifficulty: state.FsrsDifficulty);
+        }
 
-        var outcome = scheduler.Apply(current, result, nowUtc);
+        var outcome = scheduler.Apply(current, result, nowUtc,
+            scheduler.CurrentAlgorithm, scheduler.DesiredRetention);
 
         if (state is null)
         {
@@ -59,6 +89,13 @@ public sealed class StudySessionService(
         state.MasteryLevel = outcome.MasteryLevel;
         state.NextReviewTime = outcome.NextReviewTime;
         state.LastReviewedAt = outcome.ReviewedAt;
+        state.Algorithm = outcome.Algorithm;
+        state.AlgorithmVersion = outcome.AlgorithmVersion;
+        state.Sm2Repetitions = outcome.Sm2Repetitions;
+        state.Sm2EaseFactor = outcome.Sm2EaseFactor;
+        state.Sm2IntervalDays = outcome.Sm2IntervalDays;
+        state.FsrsStability = outcome.FsrsStability;
+        state.FsrsDifficulty = outcome.FsrsDifficulty;
 
         context.LearningRecords.Add(new LearningRecord
         {
@@ -69,6 +106,7 @@ public sealed class StudySessionService(
             WrongCount = outcome.WrongCount,
             MasteryLevel = outcome.MasteryLevel,
             NextReviewTime = outcome.NextReviewTime,
+            Algorithm = outcome.Algorithm,
         });
 
         await context.SaveChangesAsync(cancellationToken);

@@ -5,7 +5,23 @@
         <StackPanel MaxWidth="560" HorizontalAlignment="Left">
             <TextBlock Style="{StaticResource PageTitle}" Text="设置" />
             <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,16"
-                       Text="修改提醒间隔后立即生效，无需重启程序。" />
+                       Text="保存后立即生效，无需重启程序。" />
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="复习算法" />
+                    <ComboBox ItemsSource="{Binding ReviewAlgorithms}"
+                              SelectedItem="{Binding SelectedReviewAlgorithm}"
+                              DisplayMemberPath="Name"
+                              Width="240" HorizontalAlignment="Left" Margin="0,0,0,8" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,10"
+                               Text="{Binding SelectedReviewAlgorithm.Description}" TextWrapping="Wrap" />
+                    <StackPanel Visibility="{Binding IsFsrsSelected, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="目标保持率（80% - 97%）" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding FsrsDesiredRetentionPercent}" Width="140" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
                 <StackPanel>

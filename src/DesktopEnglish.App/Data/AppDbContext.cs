@@ -42,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("LearningRecords");
             entity.HasKey(r => r.Id);
             entity.Property(r => r.Result).HasConversion<int>();
+            entity.Property(r => r.Algorithm).HasConversion<int>();
             entity.HasOne(r => r.Word)
                   .WithMany()
                   .HasForeignKey(r => r.WordId)
@@ -54,6 +55,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.ToTable("WordReviewStates");
             entity.HasKey(s => s.WordId);
+            entity.Property(s => s.Algorithm).HasConversion<int>();
+            entity.Property(s => s.AlgorithmVersion).HasDefaultValue(1);
+            entity.Property(s => s.Sm2EaseFactor).HasDefaultValue(2.5);
             entity.HasOne(s => s.Word)
                   .WithMany()
                   .HasForeignKey(s => s.WordId)
@@ -65,6 +69,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.ToTable("UserSettings");
             entity.HasKey(s => s.Id);
+            entity.Property(s => s.ReviewAlgorithm).HasConversion<int>();
+            entity.Property(s => s.FsrsDesiredRetention).HasDefaultValue(0.9);
         });
     }
 }
