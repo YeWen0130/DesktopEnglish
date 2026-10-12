@@ -1,54 +1,51 @@
 namespace DesktopEnglish.Services;
 
 /// <summary>
-/// Runtime pause/resume of reminders. Intentionally not persisted: restarting the app resumes reminders.
+/// Runtime access to the persisted pause state of reminders.
 /// </summary>
 public interface IReminderStateService
 {
     bool IsPaused { get; }
 
-    void Pause();
+    Task PauseAsync(CancellationToken cancellationToken);
 
-    void Resume();
+    Task ResumeAsync(CancellationToken cancellationToken);
 
     event EventHandler? StateChanged;
 }
 
-/// <summary>Thread-safe in-memory reminder pause state.</summary>
-public sealed class ReminderStateService : IReminderStateService
+/// <summary>
+/// Keeps the in-memory reminder state synchronized with the persisted user settings row.
+/// </summary>
+public sealed class ReminderStateService : IReminderStateService, IDisposable
 {
-    private readonly object _gate = new();
-    private bool _isPaused;
+    private readonly ISettingsService _settings;
 
-    public bool IsPaused
+    public ReminderStateService(ISettingsService settings)
     {
-        get
-        {
-            lock (_gate)
-            {
-                return _isPaused;
-            }
-        }
+        _settings = settings;
+        _settings.SettingsChanged += OnSettingsChanged;
     }
+
+    public bool IsPaused => _settings.Current.RemindersPaused;
 
     public event EventHandler? StateChanged;
 
-    public void Pause() => SetPaused(true);
+    public Task PauseAsync(CancellationToken cancellationToken) => SetPausedAsync(true, cancellationToken);
 
-    public void Resume() => SetPaused(false);
+    public Task ResumeAsync(CancellationToken cancellationToken) => SetPausedAsync(false, cancellationToken);
 
-    private void SetPaused(bool paused)
+    public void Dispose() => _settings.SettingsChanged -= OnSettingsChanged;
+
+    private async Task SetPausedAsync(bool paused, CancellationToken cancellationToken)
     {
-        lock (_gate)
+        await _settings.UpdateAsync(entity =>
         {
-            if (_isPaused == paused)
-            {
-                return;
-            }
-
-            _isPaused = paused;
-        }
-
-        StateChanged?.Invoke(this, EventArgs.Empty);
+            entity.RemindersPaused = paused;
+            return entity;
+        }, cancellationToken);
     }
+
+    private void OnSettingsChanged(object? sender, UserSettingsSnapshot snapshot) =>
+        StateChanged?.Invoke(this, EventArgs.Empty);
 }

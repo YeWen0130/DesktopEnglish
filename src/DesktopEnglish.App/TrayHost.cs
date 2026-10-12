@@ -41,10 +41,10 @@ public sealed class TrayHost : IAsyncDisposable
         var launcher = services.GetRequiredService<IStudyLauncher>();
 
         var pauseItem = new MenuItem { Header = "暂停提醒" };
-        pauseItem.Click += (_, _) => reminderState.Pause();
+        pauseItem.Click += async (_, _) => await reminderState.PauseAsync(CancellationToken.None);
 
         var resumeItem = new MenuItem { Header = "恢复提醒" };
-        resumeItem.Click += (_, _) => reminderState.Resume();
+        resumeItem.Click += async (_, _) => await reminderState.ResumeAsync(CancellationToken.None);
 
         var menu = new ContextMenu();
         menu.Items.Add(CreateItem("打开程序", () => launcher.ShowMainWindow()));
@@ -54,6 +54,8 @@ public sealed class TrayHost : IAsyncDisposable
         menu.Items.Add(resumeItem);
         menu.Items.Add(new Separator());
         menu.Items.Add(CreateItem("打开设置", () => launcher.ShowSettings()));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(CreateItem("卸载程序", () => launcher.Uninstall()));
         menu.Items.Add(new Separator());
         menu.Items.Add(CreateItem("退出程序", Shutdown));
 

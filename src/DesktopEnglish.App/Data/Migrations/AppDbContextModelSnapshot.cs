@@ -79,6 +79,9 @@ namespace DesktopEnglish.Data.Migrations
                     b.Property<int>("ReminderInterval")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("RemindersPaused")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ReviewAlgorithm")
                         .HasColumnType("INTEGER");
 

@@ -13,4 +13,7 @@ public interface IStudyLauncher
 
     /// <summary>Opens the settings page.</summary>
     void ShowSettings();
+
+    /// <summary>Confirms and removes the application (used by the tray menu).</summary>
+    void Uninstall();
 }

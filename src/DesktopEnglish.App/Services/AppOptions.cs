@@ -18,6 +18,8 @@ public sealed class AppOptions
 
     public bool NotificationEnabled { get; set; } = true;
 
+    public bool RemindersPaused { get; set; }
+
     public bool SoundEnabled { get; set; } = true;
 
     public bool AutoStart { get; set; }
@@ -37,6 +39,7 @@ public sealed class AppOptions
         DailyWordCount: DailyWordCount,
         AutoStart: AutoStart,
         NotificationEnabled: NotificationEnabled,
+        RemindersPaused: RemindersPaused,
         SoundEnabled: SoundEnabled,
         WordsPerReminder: WordsPerReminder,
         ReviewAlgorithm: ReviewAlgorithm,
@@ -49,6 +52,7 @@ public sealed class AppOptions
         DailyWordCount = DailyWordCount,
         AutoStart = AutoStart,
         NotificationEnabled = NotificationEnabled,
+        RemindersPaused = RemindersPaused,
         SoundEnabled = SoundEnabled,
         WordsPerReminder = WordsPerReminder,
         ReviewAlgorithm = ReviewAlgorithm,

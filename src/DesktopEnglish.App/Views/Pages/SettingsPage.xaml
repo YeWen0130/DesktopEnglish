@@ -56,7 +56,7 @@
                                 Command="{Binding PauseCommand}" />
                         <Button Content="恢复提醒" Command="{Binding ResumeCommand}" />
                     </StackPanel>
-                    <TextBlock Style="{StaticResource Caption}" Text="暂停仅在本次运行期间有效，重启后恢复提醒。" />
+                    <TextBlock Style="{StaticResource Caption}" Text="暂停状态会保留，重启程序后仍然有效。" />
                 </StackPanel>
             </Border>
 

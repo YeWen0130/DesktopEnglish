@@ -28,6 +28,9 @@ public class UserSettings
     /// <summary>Whether toast notifications are shown at all.</summary>
     public bool NotificationEnabled { get; set; } = true;
 
+    /// <summary>Whether scheduled reminders are paused.</summary>
+    public bool RemindersPaused { get; set; }
+
     /// <summary>Whether toast notifications play a sound.</summary>
     public bool SoundEnabled { get; set; } = true;
 

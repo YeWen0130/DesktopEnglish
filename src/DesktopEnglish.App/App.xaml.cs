@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using DesktopEnglish.Data;
+using DesktopEnglish.Installation;
 using DesktopEnglish.Logging;
 using DesktopEnglish.Services;
 using DesktopEnglish.ViewModels;
@@ -14,6 +15,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 
 namespace DesktopEnglish;
+
 
 /// <summary>
 /// Application entry point. Startup order matters: configuration, then logging, then database, then the
@@ -35,11 +37,23 @@ public partial class App : Application, IShellController
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-        AppPaths.EnsureCreated();
+        var mode = StartupCommandLine.Parse(e.Args);
 
         var configuration = AppConfiguration.BuildConfiguration();
         var options = new AppOptions();
         configuration.GetSection(AppOptions.SectionName).Bind(options);
+
+        if (mode == StartupMode.Uninstall)
+        {
+            // A file sink under the data directory would keep that directory locked while the uninstaller
+            // deletes it, so uninstall runs on an in-memory logger and leaves no file behind.
+            var uninstallLogger = AppConfiguration.CreateMemoryLogger(options.Logging);
+            Log.Logger = uninstallLogger;
+            RunUninstall(uninstallLogger);
+            return;
+        }
+
+        AppPaths.EnsureCreated();
 
         var logger = AppConfiguration.CreateBootstrapLogger(options.Logging);
         Log.Logger = logger;
@@ -52,6 +66,7 @@ public partial class App : Application, IShellController
 
             if (!_guard.TryAcquire())
             {
+                _guard.SignalExistingInstance();
                 Shutdown();
                 return;
             }
@@ -73,12 +88,16 @@ public partial class App : Application, IShellController
             await InitializeDataAsync(databaseReport, _shutdownCts.Token);
             await InitializeSettingsAsync(_shutdownCts.Token);
 
+            // Keep the uninstall entry pointing at this executable: the app is portable, so its path can
+            // change between launches and Windows would otherwise offer to uninstall the old location.
+            RegisterUninstallEntry(logger);
+
             _tray = TrayHost.Create(
                 _host.Services,
                 (ToastNotificationService)_host.Services.GetRequiredService<INotificationService>(),
                 _host.Services.GetRequiredService<ILogger<TrayHost>>());
             _tray.Show();
-    
+
             // Subscribing initializes the toast AUMID/COM registration; that native work stays off the UI thread.
             _ = Task.Run(() => _host.Services.GetRequiredService<IToastActivationHandler>().Start());
 
@@ -91,12 +110,71 @@ public partial class App : Application, IShellController
         {
             logger.Fatal(ex, "Startup failed.");
             MessageBox.Show(
-                $"程序启动失败：{ex.Message}\n\n详细信息已写入日志：{AppPaths.LogDirectory}",
+                $"程序启动失败:{ex.Message}\n\n详细信息已写入日志:{AppPaths.LogDirectory}",
                 "DesktopEnglish",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
 
             Shutdown();
+        }
+    }
+
+
+
+    private void RunUninstall(Serilog.ILogger logger)
+    {
+        // Never let an uninstall failure leave the app half-removed without a record of why.
+        try
+        {
+            var logFactory = new SerilogLoggerFactory(logger);
+            var service = new UninstallService(
+                new CurrentUserRegistry(),
+                new ApplicationStopper(),
+                new UninstallEnvironment(),
+                logFactory.CreateLogger<UninstallService>());
+
+            var report = service.Uninstall();
+
+            var message = report.ExecutableDeletionScheduled
+                ? "卸载完成,程序文件将在几秒后自动删除。"
+                : $"卸载完成,但程序文件未能自动删除,请手动删除:{report.ExecutablePath}";
+
+            MessageBox.Show(
+                $"{message}\n\n用户数据目录已删除:{report.DataDirectory}",
+                AppInstallInfo.DisplayName,
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            logger.Information("Uninstall completed; scheduling shutdown.");
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Uninstall failed.");
+            MessageBox.Show(
+                $"卸载失败:{ex.Message}",
+                AppInstallInfo.DisplayName,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+
+        Shutdown();
+    }
+
+    private void RegisterUninstallEntry(Serilog.ILogger logger)
+    {
+        try
+        {
+            var service = _host!.Services.GetRequiredService<IUninstallService>();
+            service.Register();
+        }
+        catch (Exception ex)
+        {
+            // Registration is best effort; the app still runs without an entry in Apps & features.
+            logger.Warning(ex, "Could not register the uninstall entry.");
         }
     }
 
@@ -215,6 +293,51 @@ public partial class App : Application, IShellController
         };
 
         return window;
+    }
+
+    /// <inheritdoc />
+    public void RequestUninstall()
+    {
+        var confirm = MessageBox.Show(
+            "确定要卸载“背单词”吗?\n\n将删除程序文件、开机启动项、通知登记和全部学习数据,且无法恢复。",
+            AppInstallInfo.DisplayName,
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Warning,
+            MessageBoxResult.Cancel);
+
+        if (confirm != MessageBoxResult.OK)
+        {
+            return;
+        }
+
+        // Restart the same executable in uninstall mode. Doing the removal in a fresh process lets the
+        // current one shut down cleanly first, so its database and file locks are released.
+        try
+        {
+            var executable = Environment.ProcessPath
+                ?? throw new InvalidOperationException("Could not resolve the running executable path.");
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = executable,
+                Arguments = AppInstallInfo.UninstallSwitch,
+                UseShellExecute = true,
+            };
+
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Could not start the uninstaller.");
+            MessageBox.Show(
+                $"无法启动卸载程序:{ex.Message}",
+                AppInstallInfo.DisplayName,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+
+        Shutdown();
     }
 
     /// <summary>Requests an orderly shutdown from the tray menu.</summary>

@@ -1,4 +1,5 @@
 using DesktopEnglish.Data;
+using DesktopEnglish.Installation;
 using DesktopEnglish.Services;
 using DesktopEnglish.ViewModels;
 using DesktopEnglish.Views;
@@ -53,6 +54,10 @@ public static class ServiceRegistration
         services.AddSingleton<ConfiguredReviewScheduler>();
         services.AddSingleton<IReviewScheduler>(sp => sp.GetRequiredService<ConfiguredReviewScheduler>());
         services.AddSingleton<IStartupService, StartupService>();
+        services.AddSingleton<IUninstallRegistry, CurrentUserRegistry>();
+        services.AddSingleton<IApplicationStopper, ApplicationStopper>();
+        services.AddSingleton<IUninstallEnvironment, UninstallEnvironment>();
+        services.AddSingleton<IUninstallService, UninstallService>();
         services.AddSingleton<SingleInstanceGuard>();
 
         services.AddSingleton<ISettingsService, SettingsService>();

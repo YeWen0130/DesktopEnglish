@@ -2,6 +2,8 @@
 bin/
 obj/
 publish/
+# Single-file executable produced in the repository root by publish.ps1
+/DesktopEnglish.exe
 TestResults/
 *.user
 *.suo

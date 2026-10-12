@@ -46,6 +46,23 @@ public static class AppConfiguration
     /// <summary>Creates the logger used before the host exists, so startup failures are still recorded.</summary>
     public static Serilog.ILogger CreateBootstrapLogger(LoggingOptions options) => CreateLogger(options);
 
+    /// <summary>
+    /// Creates a logger with no file sink. Used by the uninstaller: a log file under the data directory
+    /// would keep that directory locked while it is being deleted, so an uninstall must not write one.
+    /// </summary>
+    public static Serilog.ILogger CreateMemoryLogger(LoggingOptions options)
+    {
+        var level = Enum.TryParse<LogEventLevel>(options.MinimumLevel, ignoreCase: true, out var parsed)
+            ? parsed
+            : LogEventLevel.Information;
+
+        return new LoggerConfiguration()
+            .MinimumLevel.Is(level)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .CreateLogger();
+    }
+
     public static Serilog.ILogger CreateLogger(LoggingOptions options)
     {
         AppPaths.EnsureCreated();

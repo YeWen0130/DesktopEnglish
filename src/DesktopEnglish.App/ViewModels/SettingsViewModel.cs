@@ -63,13 +63,14 @@ public sealed partial class SettingsViewModel(
 
     public Task InitializeAsync(CancellationToken cancellationToken)
     {
+        _isLoading = true;
         Load();
+        _isLoading = false;
         return Task.CompletedTask;
     }
 
     private void Load()
     {
-        _isLoading = true;
 
         var current = settings.Current;
         ReminderInterval = current.ReminderInterval;
@@ -139,18 +140,36 @@ public sealed partial class SettingsViewModel(
     }
 
     [RelayCommand]
-    private void Pause()
-    {
-        reminderState.Pause();
-        IsPaused = true;
-        StatusMessage = "提醒已暂停";
-    }
+    private async Task PauseAsync(CancellationToken cancellationToken) =>
+        await SetPausedAsync(true, "提醒已暂停", cancellationToken);
 
     [RelayCommand]
-    private void Resume()
+    private async Task ResumeAsync(CancellationToken cancellationToken) =>
+        await SetPausedAsync(false, "提醒已恢复", cancellationToken);
+
+    private async Task SetPausedAsync(bool paused, string message, CancellationToken cancellationToken)
     {
-        reminderState.Resume();
-        IsPaused = false;
-        StatusMessage = "提醒已恢复";
+        try
+        {
+            if (paused)
+            {
+                await reminderState.PauseAsync(cancellationToken);
+            }
+            else
+            {
+                await reminderState.ResumeAsync(cancellationToken);
+            }
+
+            IsPaused = paused;
+            StatusMessage = message;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to change reminder pause state.");
+            StatusMessage = "操作失败，请查看日志。";
+        }
     }
 }

@@ -31,8 +31,8 @@ public sealed class SingleInstanceGuard : IDisposable
     public bool IsPrimary => _isPrimary;
 
     /// <summary>
-    /// Attempts to become the primary instance. When another instance already owns the lock, the existing
-    /// instance is signalled to show its window and this returns false.
+    /// Attempts to become the primary instance. When another instance already owns the lock this returns
+    /// false; the caller decides whether that other instance should be asked to show its window.
     /// </summary>
     public bool TryAcquire()
     {
@@ -48,12 +48,17 @@ public sealed class SingleInstanceGuard : IDisposable
 
         if (!_isPrimary)
         {
-            _logger.LogInformation("Another instance is already running; signalling it to show its window.");
-            _showEvent.Set();
-            return false;
+            _logger.LogInformation("Another instance is already running.");
         }
 
-        return true;
+        return _isPrimary;
+    }
+
+    /// <summary>Asks the primary instance to surface its window. Used by a later launch of the app.</summary>
+    public void SignalExistingInstance()
+    {
+        _logger.LogInformation("Signalling the running instance to show its window.");
+        _showEvent.Set();
     }
 
     /// <summary>Starts listening for activation signals coming from later launches.</summary>

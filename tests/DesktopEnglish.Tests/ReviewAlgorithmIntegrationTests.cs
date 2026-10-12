@@ -43,7 +43,7 @@ public sealed class ReviewAlgorithmIntegrationTests
     {
         await using var db = await TestDatabase.CreateAsync();
         var options = new AppOptions();
-        var service = new SettingsService(db.Factory, options, new NoOpLogger<SettingsService>());
+        var service = CreateSettingsService(db.Factory, options);
         await service.LoadAsync(CancellationToken.None);
 
         await service.UpdateAsync(settings =>
@@ -53,7 +53,7 @@ public sealed class ReviewAlgorithmIntegrationTests
             return settings;
         }, CancellationToken.None);
 
-        var reloaded = new SettingsService(db.Factory, options, new NoOpLogger<SettingsService>());
+        var reloaded = CreateSettingsService(db.Factory, options);
         await reloaded.LoadAsync(CancellationToken.None);
 
         Assert.Equal(ReviewAlgorithm.Fsrs, reloaded.Current.ReviewAlgorithm);
@@ -124,7 +124,7 @@ public sealed class ReviewAlgorithmIntegrationTests
 
         var dueBefore = db.Context.WordReviewStates.Local.Single().NextReviewTime;
         var options = new AppOptions();
-        var settingsService = new SettingsService(db.Factory, options, new NoOpLogger<SettingsService>());
+        var settingsService = CreateSettingsService(db.Factory, options);
         await settingsService.LoadAsync(CancellationToken.None);
         await settingsService.UpdateAsync(settings =>
         {
@@ -206,12 +206,21 @@ public sealed class ReviewAlgorithmIntegrationTests
         Assert.Empty(await verify.WordReviewStates.ToListAsync());
     }
 
+    private static SettingsService CreateSettingsService(
+        IDbContextFactory<Data.AppDbContext> contextFactory,
+        AppOptions options)
+    {
+        var settings = new SettingsService(contextFactory, options, new NoOpLogger<SettingsService>());
+        _ = new ReminderStateService(settings);
+        return settings;
+    }
+
     private sealed class MutableSettings : ISettingsService
     {
         public ReviewAlgorithm Algorithm { get; set; } = ReviewAlgorithm.Classic;
 
         public UserSettingsSnapshot Current => new(
-            30, 20, false, true, true, 1, Algorithm, 0.9);
+            30, 20, false, true, false, true, 1, Algorithm, 0.9);
 
         public event EventHandler<UserSettingsSnapshot>? SettingsChanged
         {

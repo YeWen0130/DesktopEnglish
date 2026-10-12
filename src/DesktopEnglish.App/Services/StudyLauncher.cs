@@ -47,5 +47,16 @@ public sealed class StudyLauncher(
             logger.LogError(ex, "Failed to show the settings page.");
         }
     }
-}
 
+    public void Uninstall()
+    {
+        try
+        {
+            dispatcher.Invoke(shell.RequestUninstall);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to start the uninstall.");
+        }
+    }
+}
