@@ -32,6 +32,12 @@ public static class AppInstallInfo
     /// <summary>Command Windows runs to uninstall: the executable with the uninstall switch.</summary>
     public const string UninstallSwitch = "--uninstall";
 
+    /// <summary>
+    /// Files the optional standalone uninstaller is made of. It ships next to the executable, so an
+    /// uninstall that removes the executable has to remove these too; otherwise the program folder keeps
+    /// files that nothing can use any more.
+    /// </summary>
+    public static readonly IReadOnlyList<string> UninstallerFileNames = new[] { "Uninstall.exe", "uninstall.cmd", "uninstall.ps1" };
     /// <summary>Formats the uninstall command for a given executable path.</summary>
     public static string FormatUninstallCommand(string executablePath) => $"\"{executablePath}\" {UninstallSwitch}";
 }

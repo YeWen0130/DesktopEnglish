@@ -220,6 +220,14 @@ public sealed class UninstallEnvironment : IUninstallEnvironment
         // confirmation dialog waits for the user. Hand the job to a short-lived helper script that keeps
         // retrying until the lock clears - however long that takes - and then removes itself, so no
         // trace of the uninstall is left behind.
+        var directory = Path.GetDirectoryName(executablePath) ?? string.Empty;
+
+        // The standalone uninstaller ships next to the executable, so it is removed together with it.
+        var uninstallerFiles = AppInstallInfo.UninstallerFileNames
+            .Select(name => Path.Combine(directory, name))
+            .Where(File.Exists)
+            .Select(path => $"    del /f /q \"{path}\" >nul 2>&1");
+
         var scriptPath = Path.Combine(Path.GetTempPath(), $"DesktopEnglish-uninstall-{Guid.NewGuid():N}.cmd");
         var script = $"""
             @echo off
@@ -230,9 +238,12 @@ public sealed class UninstallEnvironment : IUninstallEnvironment
                 ping -n 2 127.0.0.1 >nul
             )
             :done
+            {string.Join(Environment.NewLine, uninstallerFiles)}
             del /f /q "%~f0" >nul 2>&1
             """;
-        File.WriteAllText(scriptPath, script);
+
+        // cmd.exe only parses labels and blocks reliably with CRLF line endings.
+        File.WriteAllText(scriptPath, script.ReplaceLineEndings("\r\n"));
 
         var startInfo = new System.Diagnostics.ProcessStartInfo
         {

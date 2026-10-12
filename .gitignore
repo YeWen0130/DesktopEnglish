@@ -2,8 +2,10 @@
 bin/
 obj/
 publish/
-# Single-file executable produced in the repository root by publish.ps1
+publish-uninstall/
+# Single-file executables produced in the repository root by publish.ps1
 /DesktopEnglish.exe
+/Uninstall.exe
 TestResults/
 *.user
 *.suo
