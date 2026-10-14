@@ -1,0 +1,40 @@
+name: Release
+
+# Pushing a tag such as v1.0 builds the self-contained executables and attaches them to a
+# GitHub Release. The binaries are never committed to the repository: they exceed GitHub's
+# 100 MB per-file limit and would permanently bloat the history.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build single-file executables
+        shell: pwsh
+        run: ./publish.ps1 -Configuration Release -Runtime win-x64
+
+      - name: Verify artifacts
+        shell: pwsh
+        run: Get-Item DesktopEnglish.exe, Uninstall.exe | Select-Object Name, Length
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            DesktopEnglish.exe
+            Uninstall.exe
